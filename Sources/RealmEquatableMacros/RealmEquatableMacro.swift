@@ -1,33 +1,69 @@
 import SwiftCompilerPlugin
+import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
-/// Implementation of the `stringify` macro, which takes an expression
-/// of any type and produces a tuple containing the value of that expression
-/// and the source code that produced the value. For example
-///
-///     #stringify(x + y)
-///
-///  will expand to
-///
-///     (x + y, "x + y")
-public struct StringifyMacro: ExpressionMacro {
+// TODO: DOC
+public struct RealmEquatable: MemberMacro {
     public static func expansion(
-        of node: some FreestandingMacroExpansionSyntax,
-        in context: some MacroExpansionContext
-    ) -> ExprSyntax {
-        guard let argument = node.argumentList.first?.expression else {
-            fatalError("compiler bug: the macro does not have any arguments")
+        of node: SwiftSyntax.AttributeSyntax,
+        providingMembersOf declaration: some SwiftSyntax.DeclGroupSyntax,
+        in context: some SwiftSyntaxMacros.MacroExpansionContext
+    ) throws -> [SwiftSyntax.DeclSyntax] {
+        guard let classDeclSyntax = declaration.as(ClassDeclSyntax.self) else {
+            context.diagnose(
+                Diagnostic(
+                    node: Syntax(declaration),
+                    message: ErrorDiagnosticMessage(
+                        id: "unsupported-type",
+                        message: "'RealmEquatable' macro can only be applied to classes"
+                    )
+                )
+            )
+            
+            return []
         }
-
-        return "(\(argument), \(literal: argument.description))"
+        
+        let className = classDeclSyntax.name
+        
+        let memberList = classDeclSyntax.memberBlock.members
+        let variableDecls = memberList.compactMap { $0.decl.as(VariableDeclSyntax.self) }
+        let identifierPatterns = variableDecls.compactMap { $0.bindings.first?.pattern.as(IdentifierPatternSyntax.self) }
+        let variableIdentifiers = identifierPatterns.map { $0.identifier }
+        let leadingTrivia = variableDecls.first?.leadingTrivia ?? Trivia(pieces: [])
+        
+        let function = try FunctionDeclSyntax("static func ==(lhs: \(className), rhs: \(className)) -> Bool") {
+            for (index, variableIdentifier) in variableIdentifiers.enumerated() {
+                if index == 0 {
+                    "lhs.\(variableIdentifier) == rhs.\(variableIdentifier)"
+                } else {
+                    "\(leadingTrivia)&& lhs.\(variableIdentifier) == rhs.\(variableIdentifier)"
+                }
+            }
+        }
+        
+        return [DeclSyntax(function)]
     }
 }
 
 @main
 struct RealmEquatablePlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
-        StringifyMacro.self,
+        RealmEquatable.self,
     ]
+}
+
+private struct InvalidDeclarationTypeError: Error {}
+
+private struct ErrorDiagnosticMessage: DiagnosticMessage, Error {
+    let message: String
+    let diagnosticID: MessageID
+    let severity: DiagnosticSeverity
+    
+    init(id: String, message: String) {
+        self.message = message
+        diagnosticID = MessageID(domain: "com.anton.plebanovich.realm.equatable", id: id)
+        severity = .error
+    }
 }

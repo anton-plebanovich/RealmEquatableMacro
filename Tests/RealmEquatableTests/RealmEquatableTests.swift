@@ -7,36 +7,33 @@ import XCTest
 import RealmEquatableMacros
 
 let testMacros: [String: Macro.Type] = [
-    "stringify": StringifyMacro.self,
+    "RealmEquatable": RealmEquatable.self,
 ]
 #endif
 
 final class RealmEquatableTests: XCTestCase {
+    
     func testMacro() throws {
         #if canImport(RealmEquatableMacros)
         assertMacroExpansion(
             """
-            #stringify(a + b)
+            @RealmEquatable
+            class MyClass: NSObject {
+                let string: String = ""
+                let int: Int = 0
+            }
             """,
             expandedSource: """
-            (a + b, "a + b")
+            class MyClass: NSObject {
+                let string: String = ""
+                let int: Int = 0
+            
+                static func == (lhs: MyClass, rhs: MyClass) -> Bool {
+                    lhs.string == rhs.string
+                    && lhs.int == rhs.int
+                }
+            }
             """,
-            macros: testMacros
-        )
-        #else
-        throw XCTSkip("macros are only supported when running tests for the host platform")
-        #endif
-    }
-
-    func testMacroWithStringLiteral() throws {
-        #if canImport(RealmEquatableMacros)
-        assertMacroExpansion(
-            #"""
-            #stringify("Hello, \(name)")
-            """#,
-            expandedSource: #"""
-            ("Hello, \(name)", #""Hello, \(name)""#)
-            """#,
             macros: testMacros
         )
         #else

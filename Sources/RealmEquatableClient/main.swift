@@ -1,8 +1,12 @@
 import RealmEquatable
+import Foundation
 
-let a = 17
-let b = 25
+@RealmEquatable
+class MyClass: NSObject {
+    let string: String = ""
+}
 
-let (result, code) = #stringify(a + b)
-
-print("The value \(result) was produced by the code \"\(code)\"")
+let asd1 = MyClass()
+let asd2 = MyClass()
+print(asd1 == asd1)
+print(asd1 == asd2)
