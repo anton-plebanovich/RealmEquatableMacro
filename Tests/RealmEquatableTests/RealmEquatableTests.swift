@@ -28,9 +28,15 @@ final class RealmEquatableTests: XCTestCase {
                 let string: String = ""
                 let int: Int = 0
             
-                static func == (lhs: MyClass, rhs: MyClass) -> Bool {
-                    lhs.string == rhs.string
-                    && lhs.int == rhs.int
+                override func isEqual(_ object: Any?) -> Bool {
+                    if super.isEqual(object) {
+                        return true
+                    }
+                    guard let rhs = object as? MyClass else {
+                        return false
+                    }
+                    return string == rhs.string
+                    && int == rhs.int
                 }
             }
             """,

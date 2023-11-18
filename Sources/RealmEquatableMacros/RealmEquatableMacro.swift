@@ -33,12 +33,14 @@ public struct RealmEquatable: MemberMacro {
         let variableIdentifiers = identifierPatterns.map { $0.identifier }
         let leadingTrivia = variableDecls.first?.leadingTrivia ?? Trivia(pieces: [])
         
-        let function = try FunctionDeclSyntax("static func ==(lhs: \(className), rhs: \(className)) -> Bool") {
+        let function = try FunctionDeclSyntax("override func isEqual(_ object: Any?) -> Bool") {
+            "if super.isEqual(object) { return true }"
+            "guard let rhs = object as? \(className) else { return false }"
             for (index, variableIdentifier) in variableIdentifiers.enumerated() {
                 if index == 0 {
-                    "lhs.\(variableIdentifier) == rhs.\(variableIdentifier)"
+                    "return \(variableIdentifier) == rhs.\(variableIdentifier)"
                 } else {
-                    "\(leadingTrivia)&& lhs.\(variableIdentifier) == rhs.\(variableIdentifier)"
+                    "\(leadingTrivia)&& \(variableIdentifier) == rhs.\(variableIdentifier)"
                 }
             }
         }
