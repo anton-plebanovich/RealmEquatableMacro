@@ -5,12 +5,15 @@ import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
 // TODO: DOC
-public struct RealmEquatable: MemberMacro {
+// https://github.com/apple/swift/blob/main/test/Macros/Inputs/syntax_macro_definitions.swift#L1309
+public struct RealmEquatable: ExtensionMacro {
     public static func expansion(
-        of node: SwiftSyntax.AttributeSyntax,
-        providingMembersOf declaration: some SwiftSyntax.DeclGroupSyntax,
-        in context: some SwiftSyntaxMacros.MacroExpansionContext
-    ) throws -> [SwiftSyntax.DeclSyntax] {
+        of node: AttributeSyntax,
+        attachedTo declaration: some DeclGroupSyntax,
+        providingExtensionsOf type: some TypeSyntaxProtocol,
+        conformingTo protocols: [TypeSyntax],
+        in context: some MacroExpansionContext
+    ) throws -> [SwiftSyntax.ExtensionDeclSyntax] {
         guard let classDeclSyntax = declaration.as(ClassDeclSyntax.self) else {
             context.diagnose(
                 Diagnostic(
@@ -32,18 +35,28 @@ public struct RealmEquatable: MemberMacro {
         let identifierPatterns = variableDecls.compactMap { $0.bindings.first?.pattern.as(IdentifierPatternSyntax.self) }
         let variableIdentifiers = identifierPatterns.map { $0.identifier }
         let leadingTrivia = variableDecls.first?.leadingTrivia ?? Trivia(pieces: [])
+        let leadingSpacesTrivia = leadingTrivia.compactMap {
+            switch $0 {
+            case .spaces: return Trivia(pieces: [$0])
+            default: return nil
+            }
+        }.first ?? Trivia(pieces: [.spaces(4)])
         
         let function = try FunctionDeclSyntax("static func ==(lhs: \(className), rhs: \(className)) -> Bool") {
             for (index, variableIdentifier) in variableIdentifiers.enumerated() {
                 if index == 0 {
                     "lhs.\(variableIdentifier) == rhs.\(variableIdentifier)"
                 } else {
-                    "\(leadingTrivia)&& lhs.\(variableIdentifier) == rhs.\(variableIdentifier)"
+                    "\(leadingTrivia)\(leadingSpacesTrivia)&& lhs.\(variableIdentifier) == rhs.\(variableIdentifier)"
                 }
             }
         }
         
-        return [DeclSyntax(function)]
+        let ext = try ExtensionDeclSyntax("extension \(className)") {
+            function
+        }
+        
+        return [ext]
     }
 }
 
