@@ -25,7 +25,7 @@ public struct RealmEquatable: MemberMacro {
             return []
         }
         
-        let className = classDeclSyntax.name
+        let className = classDeclSyntax.name.trimmed
         
         let memberList = classDeclSyntax.memberBlock.members
         let variableDecls = memberList.compactMap { $0.decl.as(VariableDeclSyntax.self) }
@@ -38,9 +38,9 @@ public struct RealmEquatable: MemberMacro {
             "if self === rhs { return true }"
             for (index, variableIdentifier) in variableIdentifiers.enumerated() {
                 if index == 0 {
-                    "return \(variableIdentifier) == rhs.\(variableIdentifier)"
+                    "return \(variableIdentifier.trimmed) == rhs.\(variableIdentifier.trimmed)"
                 } else {
-                    "\(leadingTrivia)&& \(variableIdentifier) == rhs.\(variableIdentifier)"
+                    "\(leadingTrivia)&& \(variableIdentifier.trimmed) == rhs.\(variableIdentifier.trimmed)"
                 }
             }
         }
