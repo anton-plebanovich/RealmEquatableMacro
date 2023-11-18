@@ -29,11 +29,11 @@ final class RealmEquatableTests: XCTestCase {
                 let int: Int = 0
             
                 override func isEqual(_ object: Any?) -> Bool {
-                    if super.isEqual(object) {
-                        return true
-                    }
                     guard let rhs = object as? MyClass else {
                         return false
+                    }
+                    if self === rhs {
+                        return true
                     }
                     return string == rhs.string
                     && int == rhs.int
