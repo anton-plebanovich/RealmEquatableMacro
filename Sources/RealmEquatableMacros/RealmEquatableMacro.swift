@@ -34,8 +34,8 @@ public struct RealmEquatable: MemberMacro {
         let leadingTrivia = variableDecls.first?.leadingTrivia ?? Trivia(pieces: [])
         
         let function = try FunctionDeclSyntax("override func isEqual(_ object: Any?) -> Bool") {
-            "if super.isEqual(object) { return true }"
             "guard let rhs = object as? \(className) else { return false }"
+            "if self === rhs { return true }"
             for (index, variableIdentifier) in variableIdentifiers.enumerated() {
                 if index == 0 {
                     "return \(variableIdentifier) == rhs.\(variableIdentifier)"
