@@ -13,7 +13,7 @@ let testMacros: [String: Macro.Type] = [
 
 final class RealmEquatableTests: XCTestCase {
     
-    func testMacroCanExpandClass() throws {
+    func testMacro() throws {
         #if canImport(RealmEquatableMacros)
         assertMacroExpansion(
             """
@@ -27,9 +27,7 @@ final class RealmEquatableTests: XCTestCase {
             class MyClass: NSObject {
                 let string: String = ""
                 let int: Int = 0
-            }
             
-            extension MyClass {
                 static func == (lhs: MyClass, rhs: MyClass) -> Bool {
                     lhs.string == rhs.string
                     && lhs.int == rhs.int
