@@ -21,12 +21,18 @@ final class RealmEquatableTests: XCTestCase {
             class MyClass: NSObject {
                 let string: String = ""
                 let int: Int = 0
+                @objc dynamic var dynamicString: String!
+                @objc dynamic var dynamicInt: String!
+                var computed: Int { int }
             }
             """,
             expandedSource: """
             class MyClass: NSObject {
                 let string: String = ""
                 let int: Int = 0
+                @objc dynamic var dynamicString: String!
+                @objc dynamic var dynamicInt: String!
+                var computed: Int { int }
             
                 override func isEqual(_ object: Any?) -> Bool {
                     guard let rhs = object as? MyClass else {
@@ -37,6 +43,8 @@ final class RealmEquatableTests: XCTestCase {
                     }
                     return string == rhs.string
                     && int == rhs.int
+                    && dynamicString == rhs.dynamicString
+                    && dynamicInt == rhs.dynamicInt
                 }
             }
             """,

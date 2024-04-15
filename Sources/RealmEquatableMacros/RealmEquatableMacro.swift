@@ -29,7 +29,11 @@ public struct RealmEquatable: MemberMacro {
         
         let memberList = classDeclSyntax.memberBlock.members
         let variableDecls = memberList.compactMap { $0.decl.as(VariableDeclSyntax.self) }
-        let identifierPatterns = variableDecls.compactMap { $0.bindings.first?.pattern.as(IdentifierPatternSyntax.self) }
+        let identifierPatterns = variableDecls
+        // Remove computed properties
+            .filter { $0.bindings.first?.accessorBlock == nil }
+            .compactMap { $0.bindings.first?.pattern.as(IdentifierPatternSyntax.self) }
+        
         let variableIdentifiers = identifierPatterns.map { $0.identifier }
         let leadingTrivia = variableDecls.first?.leadingTrivia ?? Trivia(pieces: [])
         
