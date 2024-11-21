@@ -28,23 +28,41 @@ public struct RealmEquatable: MemberMacro {
         let className = classDeclSyntax.name.trimmed
         
         let memberList = classDeclSyntax.memberBlock.members
-        let variableDecls = memberList.compactMap { $0.decl.as(VariableDeclSyntax.self) }
-        let identifierPatterns = variableDecls
-        // Remove computed properties
+        let storedVariableDecls = memberList
+            .compactMap { $0.decl.as(VariableDeclSyntax.self) }
+            // Remove computed properties
             .filter { $0.bindings.first?.accessorBlock == nil }
+        
+        let identifierPatterns = storedVariableDecls
             .compactMap { $0.bindings.first?.pattern.as(IdentifierPatternSyntax.self) }
         
         let variableIdentifiers = identifierPatterns.map { $0.identifier }
-        let leadingTrivia = variableDecls.first?.leadingTrivia ?? Trivia(pieces: [])
+        let leadingTrivia = storedVariableDecls.first?.leadingTrivia ?? Trivia(pieces: [])
         
         let function = try FunctionDeclSyntax("override func isEqual(_ object: Any?) -> Bool") {
             "guard let rhs = object as? \(className) else { return false }"
             "if self === rhs { return true }"
             for (index, variableIdentifier) in variableIdentifiers.enumerated() {
-                if index == 0 {
-                    "return \(variableIdentifier.trimmed) == rhs.\(variableIdentifier.trimmed)"
+                let prefix = index == 0 ? "return" : "\(leadingTrivia)&&"
+                
+                let baseName = storedVariableDecls[index]
+                    .bindings
+                    .first?
+                    .initializer?
+                    .value
+                    .as(FunctionCallExprSyntax.self)?
+                    .calledExpression
+                    .as(GenericSpecializationExprSyntax.self)?
+                    .expression
+                    .as(DeclReferenceExprSyntax.self)?
+                    .baseName
+                    .text
+                
+                let isList = baseName == "List"
+                if isList {
+                    "\(raw: prefix) \(variableIdentifier.trimmed).count == rhs.\(variableIdentifier.trimmed).count && \(variableIdentifier.trimmed).enumerated().allSatisfy { $1 == rhs.\(variableIdentifier.trimmed)[$0] }"
                 } else {
-                    "\(leadingTrivia)&& \(variableIdentifier.trimmed) == rhs.\(variableIdentifier.trimmed)"
+                    "\(raw: prefix) \(variableIdentifier.trimmed) == rhs.\(variableIdentifier.trimmed)"
                 }
             }
         }

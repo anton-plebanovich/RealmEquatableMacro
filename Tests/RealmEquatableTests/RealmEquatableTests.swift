@@ -24,6 +24,7 @@ final class RealmEquatableTests: XCTestCase {
                 @objc dynamic var dynamicString: String!
                 @objc dynamic var dynamicInt: String!
                 var computed: Int { int }
+                let list = List<MyOtherClass>()
             }
             """,
             expandedSource: """
@@ -33,6 +34,7 @@ final class RealmEquatableTests: XCTestCase {
                 @objc dynamic var dynamicString: String!
                 @objc dynamic var dynamicInt: String!
                 var computed: Int { int }
+                let list = List<MyOtherClass>()
             
                 override func isEqual(_ object: Any?) -> Bool {
                     guard let rhs = object as? MyClass else {
@@ -45,6 +47,7 @@ final class RealmEquatableTests: XCTestCase {
                     && int == rhs.int
                     && dynamicString == rhs.dynamicString
                     && dynamicInt == rhs.dynamicInt
+                    && list.count == rhs.list.count && list.enumerated().allSatisfy { $1 == rhs.list[$0] }
                 }
             }
             """,
