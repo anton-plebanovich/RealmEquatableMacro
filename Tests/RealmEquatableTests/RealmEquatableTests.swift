@@ -19,6 +19,8 @@ final class RealmEquatableTests: XCTestCase {
             """
             @RealmEquatable
             class MyClass: NSObject {
+                private static let privateStaticString: String = ""
+                static let staticString: String = ""
                 let string: String = ""
                 let int: Int = 0
                 @objc dynamic var dynamicString: String!
@@ -29,6 +31,8 @@ final class RealmEquatableTests: XCTestCase {
             """,
             expandedSource: """
             class MyClass: NSObject {
+                private static let privateStaticString: String = ""
+                static let staticString: String = ""
                 let string: String = ""
                 let int: Int = 0
                 @objc dynamic var dynamicString: String!

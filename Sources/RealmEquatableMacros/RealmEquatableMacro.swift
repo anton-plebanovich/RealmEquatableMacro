@@ -30,8 +30,12 @@ public struct RealmEquatable: MemberMacro {
         let memberList = classDeclSyntax.memberBlock.members
         let storedVariableDecls = memberList
             .compactMap { $0.decl.as(VariableDeclSyntax.self) }
-            // Remove computed properties
-            .filter { $0.bindings.first?.accessorBlock == nil }
+            .filter {
+                // Remove computed properties
+                $0.bindings.first?.accessorBlock == nil
+                // Remove static properties
+                && $0.modifiers.contains { $0.name.text == "static" } == false
+            }
         
         let identifierPatterns = storedVariableDecls
             .compactMap { $0.bindings.first?.pattern.as(IdentifierPatternSyntax.self) }
